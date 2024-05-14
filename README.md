@@ -1,4 +1,5 @@
 ![Last Commit](https://img.shields.io/github/last-commit/santosjennifer/payments)
+[![Continuous Integration with Github](https://github.com/santosjennifer/payments/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/santosjennifer/payments/actions/workflows/docker-publish.yml)
 
 # Serviço de Pagamentos
 
