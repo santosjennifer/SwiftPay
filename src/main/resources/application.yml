@@ -1,0 +1,28 @@
+server:
+   port: 8099
+
+spring:
+   application:
+      name: payments
+   datasource:
+      url: jdbc:mysql://localhost:3306/payments?useTimezone=true&serverTimezone=UTC
+      username: root
+      password: postgres
+      driverClassName: com.mysql.cj.jdbc.Driver
+   jpa:
+      hibernate:
+         ddl_auto: update
+   kafka:
+      producer:
+         bootstrap-servers: localhost:29092
+         key-serializer: org.apache.kafka.common.serialization.StringSerializer
+         value-serializer: com.github.serializer.NotificationSerializer
+      consumer:
+         bootstrap-servers: localhost:29092
+         key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+         value-deserializer: com.github.deserializer.NotificationDeserializer
+
+api:
+   autorization: https://run.mocky.io/v3/91da3a2d-df6a-4c65-9ecf-cb48c2a115a9
+   notification: https://run.mocky.io/v3/69a7f5c2-9403-4d53-8a18-7ead487ef4cd
+

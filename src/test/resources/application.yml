@@ -1,0 +1,12 @@
+spring:
+   config:
+      activate:
+         on-profile: test
+   datasource:
+      url: jdbc:h2:mem:payments
+      username: test
+      password: test
+      driverClassName: org.h2.Driver
+api:
+   autorization: https://run.mocky.io/v3/91da3a2d-df6a-4c65-9ecf-cb48c2a115a9
+   notification: https://run.mocky.io/v3/69a7f5c2-9403-4d53-8a18-7ead487ef4cd
