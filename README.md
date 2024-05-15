@@ -1,7 +1,7 @@
-![Last Commit](https://img.shields.io/github/last-commit/santosjennifer/payments)
-[![Continuous Integration with Github](https://github.com/santosjennifer/payments/actions/workflows/ci-maven.yml/badge.svg)](https://github.com/santosjennifer/payments/actions/workflows/ci-maven.yml)
+![Last Commit](https://img.shields.io/github/last-commit/santosjennifer/SwiftPay)
+[![Continuous Integration with Github](https://github.com/santosjennifer/SwiftPay/actions/workflows/ci-maven.yml/badge.svg)](https://github.com/santosjennifer/SwiftPay/actions/workflows/ci-maven.yml)
 
-# Serviço de Pagamentos
+# Serviço de Pagamentos SwiftPay
 
 ### Tecnologia:
 - Java 21
