@@ -11,11 +11,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.github.enums.UserType;
 import com.github.exception.BodyResponse;
 import com.github.exception.TransactionNotFoundException;
 import com.github.exception.BusinessException;
 import com.github.exception.UserNotFoundException;
-import com.github.model.enums.UserType;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -99,5 +99,5 @@ public class ValidationExceptionHandler {
         BodyResponse response = new BodyResponse(ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
-	
+
 }

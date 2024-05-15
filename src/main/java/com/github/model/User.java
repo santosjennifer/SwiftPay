@@ -7,7 +7,7 @@ import org.hibernate.validator.constraints.br.CPF;
 import org.hibernate.validator.group.GroupSequenceProvider;
 
 import com.github.dto.UserDto;
-import com.github.model.enums.UserType;
+import com.github.enums.UserType;
 import com.github.model.validator.CNPJGroup;
 import com.github.model.validator.CPFGroup;
 import com.github.model.validator.UserDocumentSequenceProvider;

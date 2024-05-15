@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,11 +28,13 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.github.dto.TransactionDto;
+import com.github.dto.UserBalanceDto;
 import com.github.dto.UserDto;
+import com.github.enums.TransactionType;
+import com.github.enums.UserType;
 import com.github.exception.BusinessException;
 import com.github.exception.TransactionNotFoundException;
 import com.github.model.Transaction;
-import com.github.model.enums.UserType;
 import com.github.repository.TransactionRepository;
 import com.github.service.UserService;
 
@@ -63,13 +66,9 @@ public class TransactionServiceImplTest {
 	@Test
 	@DisplayName("Deve criar uma transação de pagamento")
 	public void createTransactionTest() {
-		TransactionDto transactionDto = createTransactionDto();
-		UserDto payer = createUserDto();
-		UserDto payee = createUserDto();
-		payer.setId(10L);
-		payer.setBalance(BigDecimal.valueOf(1000));
-		transactionDto.setPayer(payer.getId());
-		transactionDto.setPayee(payee.getId());
+	    UserDto payer = new UserDto(10L, "Gustavo Payer", "02221228030", "gustavo@payer.com", "321", UserType.CONSUMER, BigDecimal.valueOf(1000));
+	    UserDto payee = new UserDto(20L, "Fernanda Payee", "74414982014", "fernanda@payee.com", "123", UserType.CONSUMER, BigDecimal.ZERO);
+	    TransactionDto transactionDto = new TransactionDto("1234", BigDecimal.TEN, 10L, 20L, LocalDateTime.now());
 
 		when(userService.findUserById(payer.getId())).thenReturn(Optional.of(payer));
 		when(userService.findUserById(payee.getId())).thenReturn(Optional.of(payee));
@@ -89,9 +88,10 @@ public class TransactionServiceImplTest {
     @Test
     @DisplayName("Deve validar que o pagador é o mesmo que o beneficiário")
     public void payerIsPayeeTest() {
-        TransactionDto transactionDto = createTransactionDto();
-        transactionDto.setPayer(2L);
-        transactionDto.setPayee(2L);
+	    UserDto payer = new UserDto(2L, "Gustavo Payer", "02221228030", "gustavo@payer.com", "321", UserType.CONSUMER, BigDecimal.valueOf(1000));
+	    TransactionDto transactionDto = new TransactionDto("1234", BigDecimal.TEN, 2L, 2L, LocalDateTime.now());
+
+        when(userService.findUserById(2L)).thenReturn(Optional.of(payer));
 
         assertThrows(BusinessException.PayerCannotBePayeeException.class,
                 () -> transactionService.createTransaction(transactionDto));
@@ -100,26 +100,26 @@ public class TransactionServiceImplTest {
     @Test
     @DisplayName("Deve validar que o pagador é logista")
     public void payerIsSellerTest() {
-        TransactionDto transactionDto = createTransactionDto();
-        UserDto payer = createUserDto();
-        payer.setUserType(UserType.SELLER);
-        transactionDto.setPayer(payer.getId());
-
-        when(userService.findUserById(payer.getId())).thenReturn(Optional.of(payer));
+	    UserDto payer = new UserDto(3L, "Gustavo Payer", "22759052000189", "gustavo@payer.com", "321", UserType.SELLER, BigDecimal.valueOf(1000));
+	    UserDto payee = new UserDto(5L, "Fernanda Payee", "74414982014", "fernanda@payee.com", "123", UserType.CONSUMER, BigDecimal.ZERO);
+	    TransactionDto transactionDto = new TransactionDto("1234", BigDecimal.TEN, 3L, 5L, LocalDateTime.now());
+        
+    	when(userService.findUserById(payer.getId())).thenReturn(Optional.of(payer));
+    	when(userService.findUserById(payee.getId())).thenReturn(Optional.of(payee));
 
         assertThrows(BusinessException.SellerCannotTransferException.class,
                 () -> transactionService.createTransaction(transactionDto));
     }
-    
+
     @Test
     @DisplayName("Deve validar saldo insuficiente")
     public void notEnoughBalanceTest() {
-        TransactionDto transactionDto = createTransactionDto();
-        UserDto payer = createUserDto();
-        payer.setBalance(BigDecimal.valueOf(1)); // Insufficient balance
-        transactionDto.setPayer(payer.getId());
+    	UserDto payer = new UserDto(2L, "Gustavo Payer", "02221228030", "gustavo@payer.com", "321", UserType.CONSUMER, BigDecimal.valueOf(9));
+ 	    UserDto payee = new UserDto(7L, "Fernanda Payee", "74414982014", "fernanda@payee.com", "123", UserType.CONSUMER, BigDecimal.ZERO);
+	    TransactionDto transactionDto = new TransactionDto("1234", BigDecimal.TEN, 2L, 7L, LocalDateTime.now());
 
         when(userService.findUserById(payer.getId())).thenReturn(Optional.of(payer));
+        when(userService.findUserById(payee.getId())).thenReturn(Optional.of(payee));
 
         assertThrows(BusinessException.NotEnoughBalanceException.class,
                 () -> transactionService.createTransaction(transactionDto));
@@ -128,13 +128,9 @@ public class TransactionServiceImplTest {
     @Test
     @DisplayName("Deve validar transação não autorizada")
     public void unauthorizedTransactionTest() {
-        TransactionDto transactionDto = createTransactionDto();
-        UserDto payer = createUserDto();
-        UserDto payee = createUserDto();
-        payer.setId(2L);
-        payer.setBalance(BigDecimal.valueOf(1000));
-		transactionDto.setPayer(payer.getId());
-		transactionDto.setPayee(payee.getId());
+    	UserDto payer = new UserDto(2L, "Gustavo Payer", "02221228030", "gustavo@payer.com", "321", UserType.CONSUMER, BigDecimal.valueOf(600));
+ 	    UserDto payee = new UserDto(7L, "Fernanda Payee", "74414982014", "fernanda@payee.com", "123", UserType.CONSUMER, BigDecimal.ZERO);
+	    TransactionDto transactionDto = new TransactionDto("1234", BigDecimal.TEN, 2L, 7L, LocalDateTime.now());
 
         when(userService.findUserById(payer.getId())).thenReturn(Optional.of(payer));
         when(userService.findUserById(payee.getId())).thenReturn(Optional.of(payee));
@@ -161,8 +157,9 @@ public class TransactionServiceImplTest {
     @Test
     @DisplayName("Deve retornar uma transação por id")
     public void findTransactionByIdTest() {
-        String transactionId = "123";
-        Transaction transaction = createTransactionDto().toTransaction();
+    	String transactionId = UUID.randomUUID().toString();
+    	TransactionDto transactionDto = new TransactionDto(transactionId, BigDecimal.TEN, 2L, 7L, LocalDateTime.now());
+        Transaction transaction = transactionDto.toTransaction();
         when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
 
         Optional<TransactionDto> foundTransaction = transactionService.findTransactionById(transactionId);
@@ -173,7 +170,7 @@ public class TransactionServiceImplTest {
     @Test
     @DisplayName("Deve retornar transação não encontrada")
     public void transactionNotFoundTest() {
-        String transactionId = "1234";
+    	String transactionId = UUID.randomUUID().toString();
         when(transactionRepository.findById(transactionId)).thenReturn(Optional.empty());
 
         assertThrows(TransactionNotFoundException.class,
@@ -183,20 +180,19 @@ public class TransactionServiceImplTest {
     @Test
     @DisplayName("Deve atualizar o saldo do pagador e do beneficiário")
     public void updateBalanceTest() {
-        UserDto payer = createUserDto();
-        payer.setBalance(BigDecimal.valueOf(100));
-        payer.setId(2L);
-        UserDto payee = createUserDto();
-        payee.setBalance(BigDecimal.valueOf(50));
-        BigDecimal value = BigDecimal.valueOf(20);
+        Long payerId = 1L;
+        Long payeeId = 2L;
+        BigDecimal value = BigDecimal.TEN;
 
-		when(userService.findUserById(payer.getId())).thenReturn(Optional.of(payer));
-		when(userService.findUserById(payee.getId())).thenReturn(Optional.of(payee));
+        when(userService.updateUserBalance(payerId, value, TransactionType.DEBIT))
+        		.thenReturn(new UserBalanceDto(payerId, value.negate()));
+        when(userService.updateUserBalance(payeeId, value, TransactionType.CREDIT))
+        		.thenReturn(new UserBalanceDto(payeeId, value));
 
-        transactionService.updateBalance(payer, payee, value);
-        
-        assertEquals(BigDecimal.valueOf(80), payer.getBalance());
-        assertEquals(BigDecimal.valueOf(70), payee.getBalance());
+        transactionService.updateBalances(payerId, payeeId, value);
+
+        verify(userService).updateUserBalance(payerId, value, TransactionType.DEBIT);
+        verify(userService).updateUserBalance(payeeId, value, TransactionType.CREDIT);
     }
 
     @Test
@@ -206,21 +202,9 @@ public class TransactionServiceImplTest {
         String payeeEmail = "joana.goes@gmail.com";
         BigDecimal value = BigDecimal.valueOf(50);
         
-        transactionService.notificationMessage(payeeEmail, value, payerName);
+        transactionService.sendNotification(payeeEmail, value, payerName);
 
         verify(notificationService).sendMessage(any());
     }
-
-	private TransactionDto createTransactionDto() {
-		TransactionDto transactionDto = new TransactionDto("123", BigDecimal.TEN, 2L, 4L, LocalDateTime.now());
-		return transactionDto;
-	}
-
-	private UserDto createUserDto() {
-		UserDto userDto = new UserDto(1L, "Vagner Silva", "000.000.000-00", "vagner.silva@bol.com", "123",
-				UserType.CONSUMER, BigDecimal.ZERO);
-
-		return userDto;
-	}
 
 }
