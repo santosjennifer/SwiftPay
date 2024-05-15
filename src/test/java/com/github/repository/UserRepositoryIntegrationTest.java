@@ -16,8 +16,8 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import com.github.enums.UserType;
 import com.github.model.User;
-import com.github.model.enums.UserType;
 
 import jakarta.validation.ConstraintViolationException;
 

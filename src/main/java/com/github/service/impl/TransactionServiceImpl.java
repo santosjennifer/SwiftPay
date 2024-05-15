@@ -11,10 +11,11 @@ import org.springframework.stereotype.Service;
 import com.github.dto.NotificationDto;
 import com.github.dto.TransactionDto;
 import com.github.dto.UserDto;
+import com.github.enums.TransactionType;
+import com.github.enums.UserType;
 import com.github.exception.BusinessException;
 import com.github.exception.TransactionNotFoundException;
 import com.github.model.Transaction;
-import com.github.model.enums.UserType;
 import com.github.repository.TransactionRepository;
 import com.github.service.TransactionService;
 import com.github.service.UserService;
@@ -58,40 +59,25 @@ public class TransactionServiceImpl implements TransactionService {
 		Optional<UserDto> payer = userService.findUserById(transactionDto.getPayer());
 		Optional<UserDto> payee = userService.findUserById(transactionDto.getPayee());
 
-	    validatePayerIsNotPayee(transactionDto);
-	    validatePayerIsNotSeller(payer.get());
-	    validatePayerHasEnoughBalance(payer.get(), transactionDto);
-	    
+		validateTransaction(transactionDto, payer.get(), payee.get());
 	    authorizeTransaction();
 	    
 	    Transaction transaction = saveTransaction(transactionDto);
-	    updateBalance(payer.get(), payee.get(), transactionDto.getValue());
-
-	    notificationMessage(payee.get().getEmail(), transactionDto.getValue(), payer.get().getName());
+	    updateBalances(payer.get().getId(), payee.get().getId(), transactionDto.getValue());
+	    sendNotification(payee.get().getEmail(), transactionDto.getValue(), payer.get().getName());
 	    
 	    return transaction.toDto();
 	}
 
-	protected void notificationMessage(String payeeEmail, BigDecimal value, String payerName) {
-		String message = "Você recebeu um pagamento no valor de R$" + value + " enviado por " + payerName;
-		NotificationDto notification = new NotificationDto(payeeEmail, message);
-		
-		notificationService.sendMessage(notification);
-	}
-	
-	private void validatePayerIsNotPayee(TransactionDto transactionDto) {
-	    if (transactionDto.getPayer() == transactionDto.getPayee()) {
+	private void validateTransaction(TransactionDto transactionDto, UserDto payer, UserDto payee) {
+	    if (payer.getId().equals(payee.getId())) {
 	        throw new BusinessException.PayerCannotBePayeeException();
 	    }
-	}
 
-	private void validatePayerIsNotSeller(UserDto payer) {
 	    if (payer.getUserType() == UserType.SELLER) {
 	        throw new BusinessException.SellerCannotTransferException();
 	    }
-	}
 
-	private void validatePayerHasEnoughBalance(UserDto payer, TransactionDto transactionDto) {
 	    if (payer.getBalance().compareTo(transactionDto.getValue()) < 0) {
 	        throw new BusinessException.NotEnoughBalanceException();
 	    }
@@ -108,12 +94,16 @@ public class TransactionServiceImpl implements TransactionService {
 	    transaction.setCreatedAt(LocalDateTime.now());
 	    return repository.save(transaction);
 	}
-
-	protected void updateBalance(UserDto payer, UserDto payee, BigDecimal value) {
-	    payer.setBalance(payer.getBalance().subtract(value));
-	    payee.setBalance(payee.getBalance().add(value));
-	    userService.saveUser(payer);
-	    userService.saveUser(payee);
+	
+	protected void updateBalances(Long payerId, Long payeeId, BigDecimal value) {
+	    userService.updateUserBalance(payerId, value, TransactionType.DEBIT);
+	    userService.updateUserBalance(payeeId, value, TransactionType.CREDIT);
 	}
 
+	protected void sendNotification(String payeeEmail, BigDecimal value, String payerName) {
+	    String message = "Você recebeu um pagamento no valor de R$" + value + " enviado por " + payerName;
+	    NotificationDto notification = new NotificationDto(payeeEmail, message);
+	    notificationService.sendMessage(notification);
+	}
+	
 }

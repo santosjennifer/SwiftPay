@@ -26,11 +26,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.github.dto.UserBalanceDto;
 import com.github.dto.UserDto;
+import com.github.enums.TransactionType;
+import com.github.enums.UserType;
 import com.github.exception.BusinessException;
 import com.github.exception.UserNotFoundException;
 import com.github.model.User;
-import com.github.model.enums.UserType;
 import com.github.repository.UserRepository;
 import com.github.service.UserService;
 
@@ -55,7 +57,7 @@ public class UserServiceImplTest {
 	String email = "joaopaulo@gmail.com";
 	String password = "1234";
 	UserType userType = UserType.CONSUMER;
-	BigDecimal balance = new BigDecimal(10);
+	BigDecimal balance = BigDecimal.TEN;
 	
     @Test
     @DisplayName("Deve criar usuário")
@@ -130,21 +132,51 @@ public class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("Deve salvar usuário")
-    public void saveUserTest() {
-        UserDto user = createUserDto();
-        when(repository.save(any(User.class))).thenReturn(user.toUser());
+    @DisplayName("Deve creditar ao saldo do usuário")
+    public void updatedUserBalanceCreditTest() {
+        User user = createUserDto().toUser();
 
-        UserDto savedUser = service.saveUser(user);
+        when(repository.save(any(User.class))).thenAnswer(invocation -> {
+            User savedUser = invocation.getArgument(0);
+            savedUser.setId(user.getId());
+            return savedUser;
+        });
 
-        assertNotNull(savedUser);
-        assertEquals(user.getId(), savedUser.getId());
-        assertEquals(user.getName(), savedUser.getName());
-        assertEquals(user.getDocument(), savedUser.getDocument());
-        assertEquals(user.getEmail(), savedUser.getEmail());
-        assertEquals(user.getPassword(), savedUser.getPassword());
-        assertEquals(user.getUserType(), savedUser.getUserType());
-        assertEquals(user.getBalance(), savedUser.getBalance()); 
+        when(repository.findById(user.getId())).thenReturn(Optional.of(user));
+
+        UserBalanceDto updatedUserBalance = 
+        		service.updateUserBalance(user.getId(), BigDecimal.TEN, TransactionType.CREDIT);
+        
+        User updatedUser = repository.findById(id).orElse(null);
+        assertNotNull(updatedUser);
+        assertNotNull(updatedUserBalance);
+        assertEquals(updatedUser.getId(), updatedUserBalance.getUser());
+        assertEquals(updatedUser.getBalance(), new BigDecimal(20));
+        assertEquals(updatedUserBalance.getAmount(), BigDecimal.TEN);
+    }
+    
+    @Test
+    @DisplayName("Deve debitar do saldo do usuário")
+    public void updatedUserBalanceDebitTest() {
+        User user = createUserDto().toUser();
+
+        when(repository.save(any(User.class))).thenAnswer(invocation -> {
+            User savedUser = invocation.getArgument(0);
+            savedUser.setId(user.getId());
+            return savedUser;
+        });
+
+        when(repository.findById(user.getId())).thenReturn(Optional.of(user));
+
+        UserBalanceDto updatedUserBalance = 
+                service.updateUserBalance(user.getId(), BigDecimal.TEN, TransactionType.DEBIT);
+
+        User updatedUser = repository.findById(id).orElse(null);
+        assertNotNull(updatedUser);
+        assertNotNull(updatedUserBalance);
+        assertEquals(updatedUser.getId(), updatedUserBalance.getUser());
+        assertEquals(updatedUser.getBalance(), BigDecimal.ZERO);
+        assertEquals(updatedUserBalance.getAmount(), BigDecimal.TEN);
     }
     
     private UserDto createUserDto() {

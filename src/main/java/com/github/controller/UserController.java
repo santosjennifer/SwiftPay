@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.github.controller.payload.UserRequest;
 import com.github.controller.payload.UserResponse;
+import com.github.dto.UserBalanceDto;
 import com.github.dto.UserDto;
+import com.github.enums.TransactionType;
 import com.github.service.UserService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -73,5 +75,12 @@ public class UserController {
 		}
 		
 		return ResponseEntity.notFound().build();
+	}
+	
+	@PostMapping("deposit")
+	public ResponseEntity<UserBalanceDto> addCredit(@RequestBody @Valid UserBalanceDto request){
+		UserBalanceDto response = service.updateUserBalance(request.getUser(), request.getAmount(), TransactionType.CREDIT);
+		
+		return new ResponseEntity<>(response, HttpStatus.OK);
 	}
 }
