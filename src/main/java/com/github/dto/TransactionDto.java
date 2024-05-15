@@ -34,32 +34,17 @@ public class TransactionDto {
 	public String getId() {
 		return id;
 	}
-	public void setId(String id) {
-		this.id = id;
-	}
 	public BigDecimal getValue() {
 		return value;
-	}
-	public void setValue(BigDecimal value) {
-		this.value = value;
 	}
 	public Long getPayer() {
 		return payer;
 	}
-	public void setPayer(Long payer) {
-		this.payer = payer;
-	}
 	public Long getPayee() {
 		return payee;
 	}
-	public void setPayee(Long payee) {
-		this.payee = payee;
-	}
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
-	}
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
 	}
 
 }

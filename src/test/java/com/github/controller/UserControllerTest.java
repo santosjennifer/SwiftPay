@@ -1,6 +1,8 @@
 package com.github.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,10 +36,12 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.controller.payload.UserRequest;
+import com.github.dto.UserBalanceDto;
 import com.github.dto.UserDto;
+import com.github.enums.TransactionType;
+import com.github.enums.UserType;
 import com.github.exception.BusinessException;
 import com.github.exception.UserNotFoundException;
-import com.github.model.enums.UserType;
 import com.github.service.UserService;
 
 @ExtendWith(SpringExtension.class)
@@ -175,6 +179,66 @@ public class UserControllerTest {
                 .andExpect(jsonPath("message").value("CPF/CNPJ ou e-mail já cadastrado."))
                 .andReturn();
     }
+    
+	@Test
+	@DisplayName("Deve fazer deposito para um usuário")
+	public void addCreditTest() throws Exception {
+		Long user = 4l;
+		BigDecimal amount = BigDecimal.TEN;
+		
+        UserBalanceDto userBalanceDto = new UserBalanceDto(user, amount);
+        when(service.updateUserBalance(anyLong(), any(BigDecimal.class), eq(TransactionType.CREDIT))).thenReturn(userBalanceDto);
+
+        String json = new ObjectMapper().writeValueAsString(userBalanceDto);
+        
+        mockMvc.perform(post(USER_API.concat("/deposit"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+        		.andExpect(status().isOk())
+        		.andExpect(jsonPath("user").value(user))
+        		.andExpect(jsonPath("amount").value(amount))
+        		.andReturn();
+       
+        verify(service, times(1)).updateUserBalance(anyLong(), any(BigDecimal.class), eq(TransactionType.CREDIT));
+	}
+	
+	@Test
+	@DisplayName("Deve retornar mensagem ao tentar fazer um deposito com valor inválido")
+	public void addCreditWithInvalidAmountTest() throws Exception {
+		Long user = 4l;
+		BigDecimal amount = BigDecimal.ZERO;
+		
+        UserBalanceDto userBalanceDto = new UserBalanceDto(user, amount);
+        when(service.updateUserBalance(anyLong(), any(BigDecimal.class), eq(TransactionType.CREDIT))).thenReturn(userBalanceDto);
+
+        String json = new ObjectMapper().writeValueAsString(userBalanceDto);
+        
+        mockMvc.perform(post(USER_API.concat("/deposit"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+        		.andExpect(status().isUnprocessableEntity())
+        		.andExpect(jsonPath("message").value("O valor deve ser no mínimo igual a 0.01."))
+        		.andReturn();
+       
+        verify(service, times(0)).updateUserBalance(anyLong(), any(BigDecimal.class), eq(TransactionType.CREDIT));
+	}
+	
+	@Test
+	@DisplayName("Deve retornar mensagem ao tentar cadastrar usuário com userType inválido")
+	public void createUserWithInvalidJsonTest() throws Exception {
+		when(service.createUser(any(UserDto.class))).thenAnswer(invocation -> {
+		    UserDto argument = invocation.getArgument(0);
+		    return argument;
+		});
+
+	    String invalidJson = "{\"id\": 1, \"name\": \"Maria da Silva\", \"document\": \"000.000.000-00\", \"userType\": \"ALGO\", \"email\": \"maria@gmail.com\", \"password\": \"123\", \"balance\": 100}";
+
+	    mockMvc.perform(post(USER_API)
+	            .contentType(MediaType.APPLICATION_JSON)
+	            .content(invalidJson))
+	            .andExpect(status().isUnprocessableEntity())
+	            .andExpect(jsonPath("message").value("Valores aceitos para o tipo de usuário: CONSUMER, SELLER"));
+	}
     
     private UserRequest createUserRequest() {
 		UserRequest request = new UserRequest();

@@ -2,7 +2,7 @@ package com.github.controller.payload;
 
 import java.math.BigDecimal;
 
-import com.github.model.enums.UserType;
+import com.github.enums.UserType;
 
 public class UserResponse {
 
