@@ -12,6 +12,23 @@ O SwiftPay é uma plataforma de pagamentos que permite depositar e realizar tran
 - MySQL
 - Docker
 
+### Como executar o projeto:
+
+1. Clone o repositório:
+```
+git clone git@github.com:santosjennifer/SwiftPay.git
+```
+
+2. Na raiz do projeto, execute o comando:
+```
+docker-compose up
+```
+
+3. Acesse o Swagger da aplicação:
+```
+http://localhost:8099/swagger-ui/index.html#/
+```
+
 ### Swagger:
 ![image](https://github.com/santosjennifer/SwiftPay/assets/90192611/675effe8-c345-4371-a381-1de71b260486)
 
@@ -77,20 +94,4 @@ POST /api/user/deposit
     "user": 1,
     "amount": 50.99
 }
-```
-### Como executar o projeto:
-
-1. Clone o repositório:
-```
-git clone git@github.com:santosjennifer/SwiftPay.git
-```
-
-2. Na raiz do projeto, execute o comando:
-```
-docker-compose up
-```
-
-3. Acesse o Swagger da aplicação:
-```
-http://localhost:8099/swagger-ui/index.html#/
 ```
