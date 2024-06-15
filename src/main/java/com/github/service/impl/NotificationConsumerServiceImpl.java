@@ -1,25 +1,21 @@
 package com.github.service.impl;
 
-import java.util.Objects;
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import com.github.client.NotificationClient;
 import com.github.dto.NotificationDto;
 import com.github.service.NotificationConsumerService;
 
+import feign.FeignException;
+
 @Service
 public class NotificationConsumerServiceImpl implements NotificationConsumerService {
-	
-	@Value("${api.notification}")
-	private String notificationUrl;
 
 	private Logger log = LoggerFactory.getLogger(NotificationConsumerServiceImpl.class);
 	
@@ -27,10 +23,10 @@ public class NotificationConsumerServiceImpl implements NotificationConsumerServ
         this.log = logger;
     }
 
-    private RestTemplate restTemplate;
+    private NotificationClient notificationClient;
     
-	public NotificationConsumerServiceImpl(RestTemplate restTemplate) {
-		this.restTemplate = restTemplate;
+	public NotificationConsumerServiceImpl(NotificationClient notificationClient) {
+		this.notificationClient = notificationClient;
 	}
 
 	@Override
@@ -39,12 +35,14 @@ public class NotificationConsumerServiceImpl implements NotificationConsumerServ
 		try {
 			log.info("Mensagem de notificação recebida: " + payload.value().getMessage());
 
-			ResponseEntity<NotificationDto> response = restTemplate.getForEntity(notificationUrl, NotificationDto.class);
-			if (response.getStatusCode() == HttpStatus.OK && Objects.requireNonNull(response.getBody().getMessage().equalsIgnoreCase("true"))) {
+			ResponseEntity<Void> response = notificationClient.sendNotification(payload.value());
+			if (response.getStatusCode() == HttpStatus.NO_CONTENT) {
 				log.info("Notificação enviada com sucesso para o e-mail " + payload.value().getEmail());
 			} else {
-				log.error("Erro ao enviar notificação");
+				log.error("Erro ao enviar notificação.");
 			}
+		} catch (FeignException e) {
+			log.error("Serviço de notificação não está disponível, tente mais tarde!");
 		} catch (Exception e) {
 			log.error("Erro ao processar ou enviar mensagem de notificação. ", e);
 		}
