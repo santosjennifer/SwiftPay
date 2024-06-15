@@ -2,7 +2,6 @@ package com.github.service.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -11,9 +10,6 @@ import com.github.service.NotificationProducerService;
 
 @Service
 public class NotificationProducerServiceImpl implements NotificationProducerService {
-	
-	@Value("${api.notification}")
-	private String notificationUrl;
 	
 	private final KafkaTemplate<String, NotificationDto> kafkaTemplate;
 	

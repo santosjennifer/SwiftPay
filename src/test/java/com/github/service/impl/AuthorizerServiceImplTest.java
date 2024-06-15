@@ -14,23 +14,19 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.client.RestTemplate;
 
+import com.github.client.AuthorizationClient;
 import com.github.dto.AuthorizerDto;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
 public class AuthorizerServiceImplTest {
 	
-	@Value("${api.autorization}")
-	private String authorizationUrl;
-
     @Mock
-    private RestTemplate restTemplate;
+    private AuthorizationClient authorizationClient;
 
     @InjectMocks
     private AuthorizerServiceImpl service;
@@ -41,44 +37,56 @@ public class AuthorizerServiceImplTest {
     @BeforeEach
     public void setup() {
     	service.setLogger(logger);
-        when(restTemplate.getForEntity(authorizationUrl, AuthorizerDto.class))
-                .thenReturn(new ResponseEntity<>(HttpStatus.OK));
     }
 
     @Test
     @DisplayName("Deve autorizar transação com sucesso")
     public void authorizeTransactionTest() {
         AuthorizerDto authorizerDto = new AuthorizerDto();
-        authorizerDto.setMessage("Autorizado");
-        ResponseEntity<AuthorizerDto> responseEntity = new ResponseEntity<>(authorizerDto, HttpStatus.OK);
-        when(restTemplate.getForEntity(authorizationUrl, AuthorizerDto.class)).thenReturn(responseEntity);
+        authorizerDto.setStatus("success");
+        
+        AuthorizerDto.DataDto dataDto = new AuthorizerDto.DataDto();
+        dataDto.setAuthorization(true);
+        authorizerDto.setData(dataDto);
+        
+        ResponseEntity<AuthorizerDto> response = new ResponseEntity<>(authorizerDto, HttpStatus.OK);
+        when(authorizationClient.isAuthorized()).thenReturn(response);
 
         boolean result = service.authorizeTransaction();
 
         assertTrue(result);
     }
-
+    
     @Test
-    @DisplayName("Deve retornar vazio ao validar autorização transação")
-    public void authorizeTransactionEmptyResponseTest() {
-        when(restTemplate.getForEntity(authorizationUrl, AuthorizerDto.class))
-                .thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
+    @DisplayName("Deve retornar status não autorizado ao validar transação")
+    public void authorizeTransactionForbiddenTest() {
+    	when(authorizationClient.isAuthorized()).thenReturn(new ResponseEntity<>(null, HttpStatus.FORBIDDEN));
 
         boolean result = service.authorizeTransaction();
 
         assertFalse(result);
-        verify(logger, times(1)).error("A resposta do serviço de autorização está vazia.");
+    }
+
+    @Test
+    @DisplayName("Deve retornar vazio ao validar autorização transação")
+    public void authorizeTransactionEmptyResponseTest() {
+        when(authorizationClient.isAuthorized()).thenReturn(new ResponseEntity<>(null, HttpStatus.OK));
+
+        boolean result = service.authorizeTransaction();
+
+        assertFalse(result);
+        verify(logger, times(1)).error("A resposta do serviço de autorização está vazia ou incompleta.");
     }
 
     @Test
     @DisplayName("Deve retornar erro ao validar autorização transação")
     public void authorizeTransactionErrorTest() {
-        when(restTemplate.getForEntity(authorizationUrl, AuthorizerDto.class)).thenThrow(new RuntimeException());
+        when(authorizationClient.isAuthorized()).thenThrow(new RuntimeException());
 
         boolean result = service.authorizeTransaction();
 
         assertFalse(result);
-        verify(logger, times(1)).error("Erro ao validar autorização da transação.");
+        verify(logger, times(1)).error("Erro ao autorizar transação.");
     }
     
 }

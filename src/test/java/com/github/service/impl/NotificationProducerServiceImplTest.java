@@ -16,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.client.RestTemplate;
 
 import com.github.dto.NotificationDto;
 
@@ -26,9 +25,6 @@ public class NotificationProducerServiceImplTest {
 
 	@Mock
 	private KafkaTemplate<String, NotificationDto> kafkaTemplate;
-
-	@Mock
-	private RestTemplate restTemplate;
 
 	@InjectMocks
 	private NotificationProducerServiceImpl service;
